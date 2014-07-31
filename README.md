@@ -1,5 +1,3 @@
-
-
 # Getting Started with GIT
 ## You will need:
 * Github or Git client based on OS

@@ -1,0 +1,109 @@
+Pseudocode Design
+
+FUNCTIONS
+------------------------------------------------------------------
+
+Init
+
+int frames (# of frames to use)
+int framsize (the size in bytes of each page frame)
+
+if return = 0,
+    return 0
+    execute function
+else
+    return 1
+    exit program
+
+
+
+CREATE
+
+char *fname (name of file)
+int size (size for file)
+
+print(“Name of File: ”)
+fgets (*fname)
+fopen(fname, writable format “w”)
+assign file size up to next whole page (5 frames)
+assign size to file(size)
+
+if return = 0,
+    return 0
+else
+    return 1
+    exit program
+
+OPEN
+char *fname
+
+if file exists,
+open file (*fname)
+else,
+“error, file does not exist”
+
+if file opens,
+create page table with initially 0 page size
+page size = file size
+    read page frames as needed when page faults occur for it
+if return = 0,
+    return 0
+else
+    return 1
+    exit program
+
+CLOSE
+
+char *fname
+
+if file exists,
+    write modified pages to disk
+    all existing frames with pages are made available to be reused.
+    close the file
+if return = 0,
+    return 0
+else
+    return 1
+    exit program
+
+READ
+
+char *fname (name of file)
+int address (virtual address of the first byte to read)
+int length(# of bytes to read > 0)
+int *err return error code
+
+err = 0
+reads a string of bytes from an open file
+if pages of file are not in memory
+    then page fault
+    fetch necessary pages into page frames
+if return = 0,
+    return 0
+else
+    return 1
+    exit program
+
+WRITE
+char *fname
+int address
+char *value
+
+if pages of files are not in memory
+    page fault occurs
+        VFM fetches page frames into main memory
+    modified pages will be written to disk when forced by later page replacements
+        when the file closes
+length of string value determines how many btyes are written
+if return = 0,
+    return 0
+else
+    return 1
+    exit program
+
+STATUS
+
+print fname
+print page table for files
+print entries for table
+label each entry and all info

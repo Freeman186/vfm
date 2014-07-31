@@ -15,7 +15,7 @@
     * You can see what files have been staged in cli (cli: git status)
     * You can also stage files individually in cli (cli: git add file_name)
 * Commit your staged files (cli: git commit)
-    * __If first time commiting your changes in cli for first time set your git config with (git config --global user.email "your email" && git config --global user.name "your name")
+    * __If first time commiting your changes__ in cli for first time set your git config with (git config --global user.email "your email" && git config --global user.name "your name")
     * You can pass various flags to commit in cli (cli: git commit -v) will display your changes verbosely (cli: git commit -n commit_name) will commit changes with a name specified
 * __Before you push you commit to the origin always pull newest master__ in cli (cli: git pull origin master) you may not need to do so in GUI Github (dont quote me on that)
 *  The point of pulling origin master is to merge the latest changes in the master (someone elses code) into your branch

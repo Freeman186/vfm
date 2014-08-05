@@ -37,7 +37,13 @@ public class Vfm {
 	}
 	
 	
-	// VFMCREATE: Creates AND opens a new file of given size
+	 
+	/**
+	 *	VFMCREATE: Creates AND opens a new file of given size 
+	 * 	@param fileName
+	 * 	@param filesize
+	 * 	@return int 0 on success
+	 */
 	int vfmcreate(String fileName,int filesize){
 	
 		Writer output = null;
@@ -91,7 +97,12 @@ public class Vfm {
 	}
 
 	
-	// VFMOPEN: Opens an existing file
+	
+	/**
+	 *	VFMOPEN: Opens an existing file 
+	 * 	@param fileName
+	 * 	@return int -1 on success 
+	 */
 	int vfmopen(String fileName)
 	{
 		int i;
@@ -107,7 +118,12 @@ public class Vfm {
 
 	
 	
-	// VFMCLOSE: Closes an open file
+
+	/**
+	 *	VFMCLOSE: Closes an open file 
+	 * 	@param fileName string file name
+	 * 	@return int 0 on success
+	 */
 	int vfmclose(String fileName)
 	{
 		for(int i=0;i<openFileList.size();i++){
@@ -121,8 +137,17 @@ public class Vfm {
 		return 0;
 	}
 
-	// VFMREAD: Reads a string of bytes from a file using the
-	// virtual file manager
+	 
+	 
+	/**
+	 *	VFMREAD: Reads a string of bytes from a file using the
+	 * 	virtual file manager
+	 * 	@param fileName file name
+	 * 	@param address virtual address from page table
+	 * 	@param length length of the file
+	 * 	@param err
+	 * 	@return string length value of the file read
+	 */
 	String vfmread(String fileName, int address, int length, int err)
 	{
 		char[] readChar = new char[length];
@@ -157,16 +182,26 @@ public class Vfm {
 	}
 
 	
-	// VFMWRITE: Writes to the pages of a file using the virtual
-	// file manager
+	/** 
+	 *	VFMWRITE: Writes to the pages of a file using the virtual
+	 * 	file manager
+	 *  @param string file name 
+	 *  @param int virtual address in page table 
+	 *  @param string value of the data being written
+	 *  @return null
+	 */
+	 
 	String vfmwrite(String fileName, int address, String value)
 	{
 		System.err.printf("vfmwrite() hasn't been implemented yet..."+value+"\n");
 		return null;
 	}
 
-	// VFMSTATUS: a formatted report about the file names of all
-	// open files in the VFM, and the pagetable for each.
+	
+	/**
+	 *	VFMSTATUS: a formatted report about the file names of all
+	 *	open files in the VFM, and the pagetable for each. 
+	 */
 	void vfmstatus()
 	{
 		System.out.printf(">---------[VFM STATUS REPORT]---------( address)---<\n");
@@ -177,7 +212,11 @@ public class Vfm {
 			System.out.print("Filename\tBytes \t Pagetable\n");
 		}		
 	}	
-		
+	/** 
+	 * String mutator for byte data read from file	
+	 * @param bytes
+	 * @return string returns a string from bytes
+	 */
 	private String charToString(char[] bytes) {
 		 String tmp = new String(bytes);
 		 return tmp;

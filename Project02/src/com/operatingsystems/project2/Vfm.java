@@ -16,7 +16,9 @@ public class Vfm {
 	
 	private int[][] pageTable;
 	private boolean initInitial = false;
-	private List<OpenFileTable> openFileList = new ArrayList<OpenFileTable>();
+	private List<OpenFile> openFileList = new ArrayList<OpenFile>();
+	private List<FilePage> filePageList = new ArrayList<FilePage>();
+
 	private RandomAccessFile ra = null;
 	private ByteBuffer chunk;
 	private int chunkCount = 0;
@@ -25,6 +27,7 @@ public class Vfm {
 	//empty constructor
 	public Vfm() {
 	}
+
 
 	// VFMINIT: Initializes the virtual file manager framework
 	// by defining the number and size of page frames
@@ -72,21 +75,10 @@ public class Vfm {
 
 		} catch (IOException e) {
 			e.printStackTrace();
-		}		
+		}	
 		
-		
-		//create new openFile object with specified name, size and adds to openFileList
-		//used as the open file table
-		OpenFileTable openFile =  new OpenFileTable(fileName, filesize); 
-		openFileList.add(openFile);
-		
-		
-		chunkCount = (filesize / frameSize) + 1;
-		
-		PageTable pt = new PageTable();
-		
-		//System.out.printf("Page count = %s\n",String.valueOf(chunkCount));
-
+		vfmopen(fileName);
+				
 		return 0;
 	}
 
@@ -94,15 +86,23 @@ public class Vfm {
 	// VFMOPEN: Opens an existing file
 	int vfmopen(String fileName)
 	{
-		int i;
-		for(i=0;i<openFileList.size();i++){
+			File file = new File(fileName);
 			
-			OpenFileTable tmp = openFileList.get(i);
-			if(tmp.getName().equals(fileName)){
-				return i;
+			if(file.exists()){
+				long fileSize = file.length()-1;
+				//create new openFile object with specified name, size and adds to openFileList
+				//used as the open file table
+				OpenFile openfile =  new OpenFile(fileName, (int)fileSize); 
+				openFileList.add(openfile);
+			
+				chunkCount = (int) (fileSize / frameSize) + 1;
+	
+			}			
+			else{
+				System.err.print("ERROR, File Not Found!");		
 			}
-		}
-		return -1;
+		
+			return -1;
 	}
 
 	
@@ -112,7 +112,7 @@ public class Vfm {
 	{
 		for(int i=0;i<openFileList.size();i++){
 				
-			OpenFileTable tmp = openFileList.get(i);
+			OpenFile tmp = openFileList.get(i);
 			if(tmp.getName().equals(fileName)){
 				openFileList.remove(i);
 				System.out.printf("Closing %s\n", fileName);
@@ -120,6 +120,7 @@ public class Vfm {
 		}
 		return 0;
 	}
+	
 
 	// VFMREAD: Reads a string of bytes from a file using the
 	// virtual file manager
@@ -155,8 +156,8 @@ public class Vfm {
 		}
 		return charToString(readChar);
 	}
-
 	
+
 	// VFMWRITE: Writes to the pages of a file using the virtual
 	// file manager
 	String vfmwrite(String fileName, int address, String value)
@@ -175,12 +176,54 @@ public class Vfm {
 			System.out.print("\t\tVFM is not initialized\n");
 		else{
 			System.out.print("Filename\tBytes \t Pagetable\n");
+			
+			for(int i=0;i<openFileList.size();i++){
+				System.out.printf("%s \t \t %d \t %s \n", openFileList.get(i).getName(), openFileList.get(i).getSize(), printTableHeader());
+				printTableBody(i);
+			}
 		}		
 	}	
-		
+	
 	private String charToString(char[] bytes) {
 		 String tmp = new String(bytes);
 		 return tmp;
+	}
+	
+	private String printTableHeader(){
+		
+		String header = String.format("+----+--------+-+-+---+------+\n"
+				+ "\t \t \t |Page| V Addr |V|D|Ref| RAddr|\n"
+				+ "\t \t \t +----+--------+-+-+---+------+");
+
+		return header;
+	}
+	
+	private void printTableBody(int index){
+		
+		int vAddr = 0;
+		int isValid = 0;
+		
+		
+			
+			for(int x=0;x< openFileList.get(index).getChunks();x++){
+				
+				//isValid = filePageList.get(index).getIsValid();
+							
+				
+				if(vAddr ==0){
+					System.out.printf("\t \t \t |  %d |     %d  |%d|0| 0 |   0  |\n", x, vAddr, isValid);
+				}
+				else if(vAddr ==512){
+					System.out.printf("\t \t \t |  %d |   %d  |%d|0| 0 |   0  |\n", x, vAddr, isValid);
+				}
+				else{
+					System.out.printf("\t \t \t |  %d |  %d  |0|0| 0 |   0  |\n", x, vAddr, isValid);
+				}
+				
+				vAddr+=512;
+			}
+		
+		System.out.print("\t \t \t +----+--------+-+-+---+------+\n");
 	}
 
 }

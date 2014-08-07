@@ -8,17 +8,16 @@ import java.io.FileWriter;
 import java.io.RandomAccessFile;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
 
 public class Vfm {
 	
-	private int[][] pageTable;
+	private String[] pageTable;
 	private boolean initInitial = false;
 	private List<OpenFile> openFileList = new ArrayList<OpenFile>();
-	private List<FilePage> filePageList = new ArrayList<FilePage>();
-
 	private RandomAccessFile ra = null;
 	private ByteBuffer chunk;
 	private int chunkCount = 0;
@@ -89,14 +88,13 @@ public class Vfm {
 			File file = new File(fileName);
 			
 			if(file.exists()){
+				
 				long fileSize = file.length()-1;
 				//create new openFile object with specified name, size and adds to openFileList
 				//used as the open file table
 				OpenFile openfile =  new OpenFile(fileName, (int)fileSize); 
 				openFileList.add(openfile);
-			
-				chunkCount = (int) (fileSize / frameSize) + 1;
-	
+				
 			}			
 			else{
 				System.err.print("ERROR, File Not Found!");		
@@ -129,31 +127,104 @@ public class Vfm {
 		char[] readChar = new char[length];
 		int count = 0;
 		RandomAccessFile readFile = null;
+		int position=0;
+		int chunkCount=0;
+		String s = null;
 		
-		try {
-			readFile = new RandomAccessFile(fileName, "r");
-			readFile.seek(address);
-					
-			while(readFile.getFilePointer() < address+(length)){
-				readChar[count] = (char) readFile.readByte();
-				count++;
-			}
-						
-		}catch(EOFException ex){
-			System.err.print("End of file reached. Cannot read from current position\n");
-			return null;
-		}catch (IOException e) {
-			System.err.print("File Not Found\n");
-			return null;
-		}finally{
+		List<Character> charList = new ArrayList<Character>();
+		
+		if(isFileOpen(fileName)){
 			
 			try {
-				readFile.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				
+				readFile = new RandomAccessFile(fileName, "r");
+				
+				//used to get position in openFile table
+				for(int i=0;i<openFileList.size();i++){
+					OpenFile tmp = openFileList.get(i);
+					
+					if(tmp.getName().equals(fileName)){
+						position = i;
+					}
+				}
+				
+				//read entire file into file table
+				while(readFile.getFilePointer() < readFile.length()){
+					charList.add((char)readFile.readByte());
+					
+					if(count%512==0){
+
+						s = new String(charList.toString());
+						openFileList.get(position).setFpAddress(chunkCount,  s);
+						openFileList.get(position).setValid(chunkCount, 1);
+						chunkCount++;
+					}
+					
+					count++;
+				}
+				
+				readFile.seek(address);
+				chunkCount = 0;
+				count=0;
+				
+				
+				//gets characters that need to be returned ()
+				while(readFile.getFilePointer() < address+length-1){
+
+					readChar[count] = (char) readFile.readByte();
+
+					if(count==511){
+
+						s = new String(readChar);
+						openFileList.get(position).setFpAddress(chunkCount,  s);
+						//openFileList.get(position).setValid(chunkCount, 1);
+						chunkCount++;
+						readChar = new char[length];
+					}
+					
+					count++;
+				}
+				
+
+				if(readChar.length == length){
+					
+					s = new String(readChar);
+					openFileList.get(position).setFpAddress(chunkCount,  s);
+					openFileList.get(position).setValid(chunkCount, 1);
+				}
+			
+						
+			}catch(EOFException ex){
+				System.err.print("End of file reached. Cannot read from current position\n");
+				return null;
+			}catch (IOException e) {
+				System.err.print("File Not Found\n");
+				return null;
+			}finally{
+				
+				try {
+					readFile.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
+			
+		}else{
+			
+			System.out.print("File is currently Closed!\n");
 		}
+		
+		pageTable = new String[frameCount];
+		
+		//add data to pageTable
+		for(int i=0;i<pageTable.length;i++){
+		
+			if(openFileList.get(position).isValid(i) && i<pageTable.length)
+				pageTable[i] = openFileList.get(position).getFpAddress(i);	
+		}
+
+	
 		return charToString(readChar);
 	}
 	
@@ -162,7 +233,35 @@ public class Vfm {
 	// file manager
 	String vfmwrite(String fileName, int address, String value)
 	{
-		System.err.printf("vfmwrite() hasn't been implemented yet..."+value+"\n");
+		
+		int tmp=0;
+		int modulus = 0;
+		int position = 0;
+		
+		if(isFileOpen(fileName)){
+			
+			for(int i=0;i<openFileList.size();i++){
+				OpenFile tmpB = openFileList.get(i);
+				if(tmpB.getName().equals(fileName)){
+					position = i;
+				}
+			}
+	
+			if(address > 512){
+				tmp = address/512;
+				modulus = address%512;	
+				openFileList.get(position).replaceText(tmp, modulus, value, fileName, address);;			
+			}
+			else{
+				modulus = address%512;	
+				openFileList.get(position).replaceText(tmp, modulus, value, fileName, address);;			
+			}
+			
+
+		}
+		
+		
+		
 		return null;
 	}
 
@@ -201,29 +300,45 @@ public class Vfm {
 	private void printTableBody(int index){
 		
 		int vAddr = 0;
-		int isValid = 0;
+		int[] isValid = openFileList.get(index).getValid();
+		int[] ditryBit = openFileList.get(index).getDirty();
+
 		
 		
 			
 			for(int x=0;x< openFileList.get(index).getChunks();x++){
 				
-				//isValid = filePageList.get(index).getIsValid();
 							
 				
 				if(vAddr ==0){
-					System.out.printf("\t \t \t |  %d |     %d  |%d|0| 0 |   0  |\n", x, vAddr, isValid);
+					System.out.printf("\t \t \t |  %d |     %d  |%d|%d| 0 |   0  |\n", x, vAddr, isValid[x], ditryBit[x]);
 				}
 				else if(vAddr ==512){
-					System.out.printf("\t \t \t |  %d |   %d  |%d|0| 0 |   0  |\n", x, vAddr, isValid);
+					System.out.printf("\t \t \t |  %d |   %d  |%d|%d| 0 |   0  |\n", x, vAddr, isValid[x], ditryBit[x]);
 				}
 				else{
-					System.out.printf("\t \t \t |  %d |  %d  |0|0| 0 |   0  |\n", x, vAddr, isValid);
+					System.out.printf("\t \t \t |  %d |  %d  |%d|%d| 0 |   0  |\n", x, vAddr, isValid[x], ditryBit[x]);
 				}
 				
 				vAddr+=512;
 			}
 		
 		System.out.print("\t \t \t +----+--------+-+-+---+------+\n");
+	}
+	
+	
+	public boolean isFileOpen(String fileName){
+		
+		
+		//used to check and see if the fileName is in the openFile table/list
+		for(int i=0;i<openFileList.size();i++){
+			OpenFile tmp = openFileList.get(i);
+			if(tmp.getName().equals(fileName)){
+				return true;
+			}
+		}
+		
+		return false;
 	}
 
 }
